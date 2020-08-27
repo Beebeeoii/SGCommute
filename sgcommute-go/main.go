@@ -15,6 +15,7 @@ import (
 type AllBusesDetails struct {
 	TotalBuses   int                   `json:"totalBuses"`
 	BusesDetails []IndividualBusDetail `json:"value"`
+	APIKeyValid  bool                  `json:"isAPIKeyValid"`
 }
 
 type IndividualBusDetail struct {
@@ -34,6 +35,7 @@ type IndividualBusDetail struct {
 type AllBusesRoutes struct {
 	TotalStops  int                  `json:"totalStops"`
 	BusesRoutes []IndividualBusRoute `json:"value"`
+	APIKeyValid bool                 `json:"isAPIKeyValid"`
 }
 
 type IndividualBusRoute struct {
@@ -54,6 +56,7 @@ type IndividualBusRoute struct {
 type AllBusesArrivalDetails struct {
 	TotalBuses        int                  `json:"totalBuses"`
 	BusArrivalDetails []BusServiceArrivals `json:"Services"`
+	APIKeyValid       bool                 `json:"isAPIKeyValid"`
 }
 
 type BusServiceArrivals struct {
@@ -79,6 +82,7 @@ type IndividualBusArrivalDetails struct {
 type AllBusStops struct {
 	TotalBusStops  int                  `json:"totalBusStops"`
 	BusStopDetails []IndividualBusStops `json:"value"`
+	APIKeyValid    bool                 `json:"isAPIKeyValid"`
 }
 
 type IndividualBusStops struct {
@@ -122,7 +126,7 @@ func handleRequests() {
 	// myRouter.HandleFunc("/busstops/{busStopNumber}/crowd", getSingleBusStopCrowd)
 }
 
-func retrieveBusDetailsFromLTA() (data AllBusesDetails) {
+func retrieveBusDetailsFromLTA(apiKey string) (data AllBusesDetails) {
 	var n = 0
 	const BusDetailsAddress = "http://datamall2.mytransport.sg/ltaodataservice/BusServices"
 
@@ -137,10 +141,16 @@ func retrieveBusDetailsFromLTA() (data AllBusesDetails) {
 		query.Add("$skip", fmt.Sprint(n))
 		request.URL.RawQuery = query.Encode()
 
-		request.Header.Set("AccountKey", "7WS52+iASeigG9HsbWDM6Q==")
+		request.Header.Set("AccountKey", apiKey)
 		request.Header.Set("accept", "application/json")
 
 		response, error := httpClient.Do(request)
+
+		if response.Status == "401 UNAUTHORIZED" {
+			data.APIKeyValid = false
+			return
+		}
+
 		if error != nil {
 			log.Fatalln(error)
 		}
@@ -153,6 +163,7 @@ func retrieveBusDetailsFromLTA() (data AllBusesDetails) {
 
 		if len(dataset.BusesDetails) == 0 {
 			data.TotalBuses = len(data.BusesDetails)
+			data.APIKeyValid = true
 			return
 		}
 
@@ -162,7 +173,7 @@ func retrieveBusDetailsFromLTA() (data AllBusesDetails) {
 	}
 }
 
-func retrieveBusRoutesFromLTA(requestedBusNumber string) (data AllBusesRoutes) {
+func retrieveBusRoutesFromLTA(requestedBusNumber string, apiKey string) (data AllBusesRoutes) {
 	var n = 0
 	const BusDetailsAddress = "http://datamall2.mytransport.sg/ltaodataservice/BusRoutes"
 
@@ -177,10 +188,16 @@ func retrieveBusRoutesFromLTA(requestedBusNumber string) (data AllBusesRoutes) {
 		query.Add("$skip", fmt.Sprint(n))
 		request.URL.RawQuery = query.Encode()
 
-		request.Header.Set("AccountKey", "7WS52+iASeigG9HsbWDM6Q==")
+		request.Header.Set("AccountKey", apiKey)
 		request.Header.Set("accept", "application/json")
 
 		response, error := httpClient.Do(request)
+
+		if response.Status == "401 UNAUTHORIZED" {
+			data.APIKeyValid = false
+			return
+		}
+
 		if error != nil {
 			log.Fatalln(error)
 		}
@@ -193,6 +210,7 @@ func retrieveBusRoutesFromLTA(requestedBusNumber string) (data AllBusesRoutes) {
 
 		if len(dataset.BusesRoutes) == 0 {
 			data.TotalStops = len(data.BusesRoutes)
+			data.APIKeyValid = true
 			return
 		}
 
@@ -205,7 +223,7 @@ func retrieveBusRoutesFromLTA(requestedBusNumber string) (data AllBusesRoutes) {
 	}
 }
 
-func retrieveBusArrivalsFromLTA(requestedBusStopCode string) (data AllBusesArrivalDetails) {
+func retrieveBusArrivalsFromLTA(requestedBusStopCode string, apiKey string) (data AllBusesArrivalDetails) {
 	const BusDetailsAddress = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2"
 
 	var httpClient = http.Client{}
@@ -218,10 +236,16 @@ func retrieveBusArrivalsFromLTA(requestedBusStopCode string) (data AllBusesArriv
 	query.Add("BusStopCode", requestedBusStopCode)
 	request.URL.RawQuery = query.Encode()
 
-	request.Header.Set("AccountKey", "7WS52+iASeigG9HsbWDM6Q==")
+	request.Header.Set("AccountKey", apiKey)
 	request.Header.Set("accept", "application/json")
 
 	response, error := httpClient.Do(request)
+
+	if response.Status == "401 UNAUTHORIZED" {
+		data.APIKeyValid = false
+		return
+	}
+
 	if error != nil {
 		log.Fatalln(error)
 	}
@@ -232,10 +256,11 @@ func retrieveBusArrivalsFromLTA(requestedBusStopCode string) (data AllBusesArriv
 	error = json.Unmarshal([]byte(body), &data)
 
 	data.TotalBuses = len(data.BusArrivalDetails)
+	data.APIKeyValid = true
 	return
 }
 
-func retrieveSpecificBusArrivalFromLTA(requestedBusStopCode string, requestedBusNumber string) (data AllBusesArrivalDetails) {
+func retrieveSpecificBusArrivalFromLTA(requestedBusStopCode string, requestedBusNumber string, apiKey string) (data AllBusesArrivalDetails) {
 	const BusDetailsAddress = "http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2"
 
 	var httpClient = http.Client{}
@@ -249,10 +274,16 @@ func retrieveSpecificBusArrivalFromLTA(requestedBusStopCode string, requestedBus
 	query.Add("ServiceNo", requestedBusNumber)
 	request.URL.RawQuery = query.Encode()
 
-	request.Header.Set("AccountKey", "7WS52+iASeigG9HsbWDM6Q==")
+	request.Header.Set("AccountKey", apiKey)
 	request.Header.Set("accept", "application/json")
 
 	response, error := httpClient.Do(request)
+
+	if response.Status == "401 UNAUTHORIZED" {
+		data.APIKeyValid = false
+		return
+	}
+
 	if error != nil {
 		log.Fatalln(error)
 	}
@@ -263,10 +294,11 @@ func retrieveSpecificBusArrivalFromLTA(requestedBusStopCode string, requestedBus
 	error = json.Unmarshal([]byte(body), &data)
 
 	data.TotalBuses = len(data.BusArrivalDetails)
+	data.APIKeyValid = true
 	return
 }
 
-func retrieveBusStopsFromLTA() (data AllBusStops) {
+func retrieveBusStopsFromLTA(apiKey string) (data AllBusStops) {
 	var n = 0
 	const BusDetailsAddress = "http://datamall2.mytransport.sg/ltaodataservice/BusStops"
 
@@ -281,10 +313,16 @@ func retrieveBusStopsFromLTA() (data AllBusStops) {
 		query.Add("$skip", fmt.Sprint(n))
 		request.URL.RawQuery = query.Encode()
 
-		request.Header.Set("AccountKey", "7WS52+iASeigG9HsbWDM6Q==")
+		request.Header.Set("AccountKey", apiKey)
 		request.Header.Set("accept", "application/json")
 
 		response, error := httpClient.Do(request)
+
+		if response.Status == "401 UNAUTHORIZED" {
+			data.APIKeyValid = false
+			return
+		}
+
 		if error != nil {
 			log.Fatalln(error)
 		}
@@ -297,6 +335,7 @@ func retrieveBusStopsFromLTA() (data AllBusStops) {
 
 		if len(dataset.BusStopDetails) == 0 {
 			data.TotalBusStops = len(data.BusStopDetails)
+			data.APIKeyValid = true
 			return
 		}
 
@@ -318,13 +357,13 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := guideMessage{
-		" https://sgcommute-287703.appspot.com/buses",
-		" https://sgcommute-287703.appspot.com/buses/{busNumber}",
-		" https://sgcommute-287703.appspot.com/buses/{busNumber}/route",
-		" https://sgcommute-287703.appspot.com/busstops",
-		" https://sgcommute-287703.appspot.com/busstops/{busStopNumber}",
-		" https://sgcommute-287703.appspot.com/busstops/{busStopNumber}/arrivals",
-		" https://sgcommute-287703.appspot.com/busstops/{busStopNumber}/{busNumber}",
+		"https://sgcommute-287703.appspot.com/buses",
+		"https://sgcommute-287703.appspot.com/buses/{busNumber}",
+		"https://sgcommute-287703.appspot.com/buses/{busNumber}/route",
+		"https://sgcommute-287703.appspot.com/busstops",
+		"https://sgcommute-287703.appspot.com/busstops/{busStopNumber}",
+		"https://sgcommute-287703.appspot.com/busstops/{busStopNumber}/arrivals",
+		"https://sgcommute-287703.appspot.com/busstops/{busStopNumber}/{busNumber}",
 	}
 
 	jsonResponse, error := json.Marshal(message)
@@ -340,122 +379,210 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllBusDetails(w http.ResponseWriter, r *http.Request) {
-	jsonResponse, error := json.Marshal(retrieveBusDetailsFromLTA())
+	apiKey := r.Header.Get("API_KEY")
 
-	if error != nil {
-		http.Error(w, error.Error(), http.StatusInternalServerError)
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	data := retrieveBusDetailsFromLTA(apiKey)
+
+	if !data.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		jsonResponse, error := json.Marshal(data)
+
+		if error != nil {
+			http.Error(w, error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+	}
 }
 
 func getSingleBusDetail(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("API_KEY")
+
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		return
+	}
+
 	var vars = mux.Vars(r)
 	var requestedBusNumber = vars["busNumber"]
 
-	var allBuses = retrieveBusDetailsFromLTA().BusesDetails
+	data := retrieveBusDetailsFromLTA(apiKey)
 
-	for _, n := range allBuses {
-		if requestedBusNumber == n.ServiceNo {
-			jsonResponse, error := json.Marshal(n)
-			if error != nil {
-				http.Error(w, error.Error(), http.StatusInternalServerError)
+	if !data.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		var allBuses = data.BusesDetails
+
+		for _, n := range allBuses {
+			if requestedBusNumber == n.ServiceNo {
+				jsonResponse, error := json.Marshal(n)
+				if error != nil {
+					http.Error(w, error.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(jsonResponse)
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(jsonResponse)
-			return
 		}
+
+		w.Write([]byte("No such bus service"))
 	}
-
-	w.Write([]byte("No such bus service"))
-
 }
 
 func getSingleBusRoute(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("API_KEY")
+
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		return
+	}
+
 	var vars = mux.Vars(r)
 	var requestedBusNumber = vars["busNumber"]
 
-	var allBusesRoutesDetails = retrieveBusRoutesFromLTA(requestedBusNumber)
+	var allBusesRoutesDetails = retrieveBusRoutesFromLTA(requestedBusNumber, apiKey)
 
-	if allBusesRoutesDetails.TotalStops == 0 {
-		w.Write([]byte("No such bus service"))
-		return
+	if !allBusesRoutesDetails.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		if allBusesRoutesDetails.TotalStops == 0 {
+			w.Write([]byte("No such bus service"))
+			return
+		}
+
+		jsonResponse, error := json.Marshal(allBusesRoutesDetails)
+		if error != nil {
+			http.Error(w, error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
 	}
-
-	jsonResponse, error := json.Marshal(allBusesRoutesDetails)
-	if error != nil {
-		http.Error(w, error.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
 }
 
 func getAllBusStopsDetails(w http.ResponseWriter, r *http.Request) {
-	jsonResponse, error := json.Marshal(retrieveBusStopsFromLTA())
+	apiKey := r.Header.Get("API_KEY")
 
-	if error != nil {
-		http.Error(w, error.Error(), http.StatusInternalServerError)
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	data := retrieveBusStopsFromLTA(apiKey)
+
+	if !data.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		jsonResponse, error := json.Marshal(data)
+
+		if error != nil {
+			http.Error(w, error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+	}
 }
 
 func getSingleBusStopDetail(w http.ResponseWriter, r *http.Request) {
-	var vars = mux.Vars(r)
-	var requestedBusStopCode = vars["busStopNumber"]
+	apiKey := r.Header.Get("API_KEY")
 
-	var busStops = retrieveBusStopsFromLTA().BusStopDetails
-
-	for _, n := range busStops {
-		if requestedBusStopCode == n.BusStopCode {
-			jsonResponse, error := json.Marshal(n)
-			if error != nil {
-				http.Error(w, error.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(jsonResponse)
-			return
-		}
-	}
-
-	w.Write([]byte("No such bus service"))
-}
-
-func getBusArrivals(w http.ResponseWriter, r *http.Request) {
-	var vars = mux.Vars(r)
-	var requestedBusStopCode = vars["busStopNumber"]
-
-	jsonResponse, error := json.Marshal(retrieveBusArrivalsFromLTA(requestedBusStopCode))
-
-	if error != nil {
-		http.Error(w, error.Error(), http.StatusInternalServerError)
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
+	var vars = mux.Vars(r)
+	var requestedBusStopCode = vars["busStopNumber"]
+
+	data := retrieveBusStopsFromLTA(apiKey)
+
+	if !data.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		var busStops = data.BusStopDetails
+
+		for _, n := range busStops {
+			if requestedBusStopCode == n.BusStopCode {
+				jsonResponse, error := json.Marshal(n)
+				if error != nil {
+					http.Error(w, error.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.Write(jsonResponse)
+				return
+			}
+		}
+
+		w.Write([]byte("No such bus stop number"))
+	}
+}
+
+func getBusArrivals(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("API_KEY")
+
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		return
+	}
+
+	var vars = mux.Vars(r)
+	var requestedBusStopCode = vars["busStopNumber"]
+
+	data := retrieveBusArrivalsFromLTA(requestedBusStopCode, apiKey)
+
+	if !data.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		jsonResponse, error := json.Marshal(data)
+
+		if error != nil {
+			http.Error(w, error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
+	}
 }
 
 func getSpecificBusArrival(w http.ResponseWriter, r *http.Request) {
+	apiKey := r.Header.Get("API_KEY")
+
+	if apiKey == "" {
+		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		return
+	}
+
 	var vars = mux.Vars(r)
 	var requestedBusStopCode = vars["busStopNumber"]
 	var requestedBusNumber = vars["busNumber"]
 
-	jsonResponse, error := json.Marshal(retrieveSpecificBusArrivalFromLTA(requestedBusStopCode, requestedBusNumber))
+	data := retrieveSpecificBusArrivalFromLTA(requestedBusStopCode, requestedBusNumber, apiKey)
 
-	if error != nil {
-		http.Error(w, error.Error(), http.StatusInternalServerError)
-		return
+	if !data.APIKeyValid {
+		w.Write([]byte("Invalid API Key!"))
+	} else {
+		jsonResponse, error := json.Marshal(data)
+
+		if error != nil {
+			http.Error(w, error.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonResponse)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonResponse)
 }
