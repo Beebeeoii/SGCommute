@@ -47,4 +47,4 @@ where `API_KEY` is the key and `{YOUR-API-KEY}` is the value.
 
 #### Getting all routes
 
-To view all available routes of SGCommute, please read the documentation or access the [home page of SGCommute](https://sgcommute-287703.appspot.com/buses)
+To view all available routes of SGCommute, please read the documentation or access the [home page of SGCommute](https://sgcommute-287703.appspot.com)
