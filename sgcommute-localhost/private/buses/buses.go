@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const apiKey = "yourAPIKey"
+
 type allBusesDetails struct {
 	TotalBuses   int                   `json:"totalBuses"`
 	BusesDetails []individualBusDetail `json:"value"`
@@ -100,10 +102,8 @@ func retrieveBusDetailsFromLTA(apiKey string) (data allBusesDetails) {
 
 // GetAllBusDetails ref by main
 func GetAllBusDetails(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("API_KEY")
-
 	if apiKey == "" {
-		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		w.Write([]byte("API Key not found! Please fill in API Key"))
 		return
 	}
 
@@ -125,10 +125,8 @@ func GetAllBusDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSingleBusDetail(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("API_KEY")
-
 	if apiKey == "" {
-		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		w.Write([]byte("API Key not found! Please fill in API Key"))
 		return
 	}
 
@@ -210,10 +208,8 @@ func retrieveBusRoutesFromLTA(requestedBusNumber string, apiKey string) (data al
 }
 
 func GetSingleBusRoute(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("API_KEY")
-
 	if apiKey == "" {
-		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
+		w.Write([]byte("API Key not found! Please fill in API Key"))
 		return
 	}
 

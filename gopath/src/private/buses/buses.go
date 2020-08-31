@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 )
@@ -100,7 +101,7 @@ func retrieveBusDetailsFromLTA(apiKey string) (data allBusesDetails) {
 
 // GetAllBusDetails ref by main
 func GetAllBusDetails(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("API_KEY")
+	apiKey := os.Getenv("API_KEY")
 
 	if apiKey == "" {
 		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
@@ -125,7 +126,7 @@ func GetAllBusDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSingleBusDetail(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("API_KEY")
+	apiKey := os.Getenv("API_KEY")
 
 	if apiKey == "" {
 		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
@@ -210,7 +211,7 @@ func retrieveBusRoutesFromLTA(requestedBusNumber string, apiKey string) (data al
 }
 
 func GetSingleBusRoute(w http.ResponseWriter, r *http.Request) {
-	apiKey := r.Header.Get("API_KEY")
+	apiKey := os.Getenv("API_KEY")
 
 	if apiKey == "" {
 		w.Write([]byte("API Key not found! Please attach your unique API Key to the Header of GET request"))
