@@ -53,4 +53,6 @@ To view all available routes of SGCommute, please read the documentation or acce
 
 #### On localhost
 
+`git clone https://github.com/Beebeeoii/SGCommute.git`
+
 #### On Google App Engine
