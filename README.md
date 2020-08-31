@@ -47,7 +47,7 @@ To retrieve bus arrival timings at a specific bus stop (Eg. 01012):
 
 `https://sgcommute-287703.appspot.com/busstops/01012/arrivals`
 
-For a full list of routes, please visit the wiki page of this project.
+For a full list of routes, please visit the [wiki page](https://github.com/Beebeeoii/SGCommute/wiki) of this project.
 
 ### Deploy
 
